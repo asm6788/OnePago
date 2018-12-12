@@ -22,16 +22,20 @@ namespace OnePago
             public Shape Card_Shape = Shape.None;
             public int Card_Number = 0; // A = 1, J=11 ,Q=12, K=13
             public bool Color = false;
+            public bool temp = false;
 
             public CardInfo()
             {
             }
 
-            public CardInfo(Shape card_Shape, int card_Number, bool color)
+            public CardInfo(Shape card_Shape, int card_Number)
             {
                 Card_Shape = card_Shape;
                 Card_Number = card_Number;
-                Color = color;
+                if (Card_Shape == Shape.Heart || Card_Shape == Shape.Diamond || Card_Shape == Shape.ColorJocker)
+                {
+                    Color = true;
+                }
             }
 
             public static bool operator ==(CardInfo obj1, CardInfo obj2)
@@ -50,27 +54,30 @@ namespace OnePago
             {
                 string target = "";
                 target += Card_Shape.ToString();
-                switch (Card_Number)
+                if (!temp)
                 {
-                    case 1:
-                        target += "A";
-                        break;
+                    switch (Card_Number)
+                    {
+                        case 1:
+                            target += "A";
+                            break;
 
-                    case 11:
-                        target += "J";
-                        break;
+                        case 11:
+                            target += "J";
+                            break;
 
-                    case 12:
-                        target += "Q";
-                        break;
+                        case 12:
+                            target += "Q";
+                            break;
 
-                    case 13:
-                        target += "K";
-                        break;
+                        case 13:
+                            target += "K";
+                            break;
 
-                    default:
-                        target += Card_Number;
-                        break;
+                        default:
+                            target += Card_Number;
+                            break;
+                    }
                 }
                 return target;
             }
@@ -82,7 +89,7 @@ namespace OnePago
             public List<CardInfo> Cards = new List<CardInfo>();
             public bool AmAI;
 
-            public abstract void Do(OneCard system, AI who, List<AI> Players);
+            public abstract void Do(OneCard system, Player who, List<Player> Players);
 
             public abstract void ForgetCard();
 
@@ -96,7 +103,7 @@ namespace OnePago
             public AI()
             { AmAI = true; }
 
-            public override void Do(OneCard system, AI who, List<AI> Players)
+            public override void Do(OneCard system, Player who, List<Player> Players)
             {
                 K:
                 bool Card_found = false;
@@ -187,7 +194,7 @@ namespace OnePago
 
                                 case 12:
                                     //Q
-                                    system.GameTurn.Reverse(system, Players);
+                                    system.GameTurn.Reverse(system);
                                     break;
 
                                 case 13:
@@ -196,7 +203,6 @@ namespace OnePago
                                     break;
 
                                 case 7:
-                                    bool Iscolor = false;
                                     int[] Check_list = new int[5];
                                     if (Cards.Count != 0)
                                     {
@@ -222,11 +228,10 @@ namespace OnePago
                                             }
                                         }
                                         tempcard = (CardInfo.Shape)Check_list.ToList().IndexOf(Check_list.Max());
-                                        if (tempcard == CardInfo.Shape.Heart || tempcard == CardInfo.Shape.Diamond)
+                                        system.LastCard = new CardInfo(tempcard, 7)
                                         {
-                                            Iscolor = true;
-                                        }
-                                        system.LastCard = new CardInfo(tempcard, 7, Iscolor);
+                                            temp = true
+                                        };
                                         IsSeven = true;
                                     }
                                     break;
@@ -292,26 +297,235 @@ namespace OnePago
             }
         }
 
+        public class Human : Player
+        {
+            public Human()
+            { AmAI = false; }
+
+            public override void Do(OneCard system, Player who, List<Player> Players)
+            {
+                K:
+                bool OneMore = false;
+                CardInfo.Shape tempcard = CardInfo.Shape.None;
+                bool IsJ = false;
+                bool IsSeven = false;
+                Console.WriteLine("카드를 낼시간");
+                Console.WriteLine("마지막카드" + system.LastCard);
+                if (system.Attack != 0)
+                {
+                    Console.WriteLine("경고! 공격받는중" + system.Attack + "장!");
+                }
+                for (int i = 0; i != Cards.Count; i++)
+                {
+                    Console.WriteLine(i + ":" + Cards[i]);
+                }
+                Console.WriteLine("먹을려면" + Cards.Count);
+                int want = 0;
+                try
+                {
+                    want = int.Parse(Console.ReadLine());
+                }
+                catch(FormatException e)
+                {
+                    Console.WriteLine("올바른 입력이 아닙니다");
+                    goto K;
+                }
+                if (want == Cards.Count)
+                {
+                    if (system.Attack != 0)
+                    {
+                        for (int j = 0; j != system.Attack; j++)
+                        {
+                            Console.WriteLine(ID + ": " + system.Take(ref who) + "먹음");
+                        }
+                        system.Attack = 0;
+                    }
+                    else
+                    {
+                        Console.WriteLine(ID + ": " + system.Take(ref who) + "먹음");
+                    }
+                    goto Exit;
+                }
+                CardInfo card = Cards[want];
+                if (system.Attack != 0) //공격받는중
+                {
+                    if (system.Vaildate(card))
+                    {
+                        switch (card.Card_Number)
+                        {
+                            case 1:
+                                //A
+                                system.Attack += 3;
+                                break;
+
+                            case 2:
+                                system.Attack += 2;
+                                break;
+
+                            case 3:
+                                system.Attack = 0;
+                                break;
+                        }
+                        switch (card.Card_Shape)
+                        {
+                            case CardInfo.Shape.BlackJocker:
+                                system.Attack += 5;
+                                break;
+
+                            case CardInfo.Shape.ColorJocker:
+                                system.Attack += 10;
+                                break;
+                        }
+                        Console.WriteLine(ID + ": 공격대응 " + card + "제출");
+                        system.Play(card, ref who, false);
+                        if (OneMore)
+                        {
+                            goto K;
+                        }
+
+                        goto Exit;
+                    }
+                    else
+                    {
+                        Console.WriteLine("올바른 카드가 아닙니다!");
+                        goto K;
+                    }
+                }
+                else //평상시
+                {
+                    if (system.Vaildate(card))
+                    {
+                        switch (card.Card_Number)
+                        {
+                            case 1:
+                                //A
+                                system.Attack += 3;
+                                break;
+
+                            case 2:
+                                system.Attack += 2;
+                                break;
+
+                            case 3:
+                                system.Attack = 0;
+                                break;
+
+                            case 11:
+                                //J
+                                IsJ = true;
+                                break;
+
+                            case 12:
+                                //Q
+                                system.GameTurn.Reverse(system);
+                                break;
+
+                            case 13:
+                                //K
+                                OneMore = true;
+                                break;
+
+                            case 7:
+                                Console.WriteLine("무슨 모양으로 변경하겠습니까?");
+                                Console.WriteLine("1. 다이아 2.하트 3.스페이드 4. 클로버");
+                                try
+                                {
+                                    tempcard = (CardInfo.Shape)int.Parse(Console.ReadLine());
+                                }
+                                catch (FormatException e)
+                                {
+                                    Console.WriteLine("올바른 입력이 아닙니다");
+                                    goto K;
+                                }
+                                system.LastCard = new CardInfo(tempcard, 7)
+                                {
+                                    temp = true
+                                };
+                                IsSeven = true;
+                                break;
+                        }
+
+                        switch (card.Card_Shape)
+                        {
+                            case CardInfo.Shape.BlackJocker:
+                                system.Attack += 5;
+                                break;
+
+                            case CardInfo.Shape.ColorJocker:
+                                system.Attack += 10;
+                                break;
+                        }
+
+                        Console.WriteLine(ID + ": " + card + "제출 남은 카드 " + Cards.Count);
+                        if (tempcard != CardInfo.Shape.None)
+                        {
+                            Console.WriteLine("카드 모양 변경: " + tempcard);
+                        }
+
+                        system.Play(card, ref who, IsSeven);
+                        if (OneMore)
+                        {
+                            goto K;
+                        }
+
+                        goto Exit;
+                    }
+                    else
+                    {
+                        Console.WriteLine("올바른 카드가 아닙니다!");
+                        goto K;
+                    }
+                }
+                Exit:
+                if (who.Cards.Count >= 20)
+                {
+                    system.Bankrupt(who);
+                }
+
+                Console.WriteLine(ID + ": " + Cards.Count + "장");
+                system.GameTurn.Next(system, Players, IsJ);
+            }
+
+            public override void ForgetCard()
+            {
+            }
+
+            public override void RememberCard(CardInfo card)
+            {
+            }
+
+            public override void Find(OneCard system)
+            {
+                foreach (CardInfo card in Cards)
+                {
+                }
+            }
+        }
+
         public class Turn
         {
             private int Count_Turn = 0;
-            public AI GameTurn = null;
+            public Player GameTurn = null;
             public bool reversed = false;
             private bool reset = false;
             public int cumulation;
             public bool PlayerChanged = false;
+            public bool LastTurnWin = false;
 
-            public AI Next(OneCard system, List<AI> Players, bool IsJ = false)
+            public Player Next(OneCard system, List<Player> Players, bool IsJ = false)
             {
                 if (system.GameStarted)
                 {
                     if (Players.Count == 1)
                     {
-                        system.Win(Players[0]);
+                        if (!LastTurnWin)
+                        {
+                            system.Win(Players[0]);
+                        }
                         system.End();
                         goto End;
                     }
-
+                    LastTurnWin = false;
                     cumulation++;
 
                     if (PlayerChanged && Count_Turn >= Players.Count)
@@ -376,7 +590,7 @@ namespace OnePago
 
                         reset = false;
                     }
-                    AI output = Players[Count_Turn];
+                    Player output = Players[Count_Turn];
                     output.Do(system, output, Players);
                     return output;
                 }
@@ -384,14 +598,14 @@ namespace OnePago
                 return new AI();
             }
 
-            public void Reverse(OneCard system, List<AI> Players)
+            public void Reverse(OneCard system)
             {
                 reversed = !reversed;
             }
         }
 
         public List<CardInfo> CardDeck = new List<CardInfo>(52);
-        public List<AI> Players = new List<AI>();
+        public List<Player> Players = new List<Player>();
         public CardInfo LastCard = null;
         public Turn GameTurn = new Turn();
         protected int Changed_PlayerID = 0;
@@ -402,13 +616,13 @@ namespace OnePago
         {
         }
 
-        public OneCard(List<AI> players)
+        public OneCard(List<Player> players)
         {
             GenDeck(false);
             Players = players;
             for (int who = 0; who < players.Count; who++)
             {
-                AI whois = players[who];
+                Player whois = players[who];
                 whois.ID = who;
                 for (int i = 0; i != 7; i++)
                 {
@@ -423,16 +637,18 @@ namespace OnePago
             GameTurn.Next(this, Players);
         }
 
-        public void Play(CardInfo card, ref AI who, bool Seven)
+        public void Play(CardInfo card, ref Player who, bool Seven)
         {
             who.Cards.Remove(card);
             if (!Seven)
             {
+                LastCard.temp = false;
                 LastCard = card;
             }
             if (who.Cards.Count == 0)
             {
                 Win(who);
+                GameTurn.LastTurnWin = true;
             }
             for (int i = 0; i != Players.Count; i++)
             {
@@ -447,11 +663,33 @@ namespace OnePago
         {
             if (Attack != 0) // 공격받는중
             {
-                if ((card.Card_Number == 1 || card.Card_Number == 2 || card.Card_Number == 3) && card.Card_Shape == LastCard.Card_Shape) //A,2,3 이고 모양동일 내고 싶을때
+                if (card.Card_Shape == CardInfo.Shape.BlackJocker || card.Card_Shape == CardInfo.Shape.ColorJocker) //조커 내고싶음
+                {
+                    if (LastCard.Card_Shape == CardInfo.Shape.BlackJocker || LastCard.Card_Shape == CardInfo.Shape.ColorJocker) //연속 조커
+                    {
+                        return true;
+                    }
+                    if (card.Color == LastCard.Color)//색일치
+                    {
+                        return true;
+                    }
+                }
+                if (LastCard.Card_Shape == CardInfo.Shape.BlackJocker || LastCard.Card_Shape == CardInfo.Shape.ColorJocker) //조커로 공격 '받는'중
+                {
+                    if(LastCard.Card_Shape == CardInfo.Shape.BlackJocker) //흑조 시도
+                    {
+                        if (card.Card_Number == 3) //3시도
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                if (card.Card_Number == 1 || card.Card_Number == 2 || card.Card_Number == 3) //A,2,3 공격및방어 시도중
                 {
                     if (card.Card_Number == 3) //3시도
                     {
-                        if (LastCard.Card_Number == 2)//마지막 카드 2일대
+                        if (LastCard.Card_Number == 2 && card.Card_Shape == LastCard.Card_Shape)//마지막 카드 2이며 모양일치
                         {
                             return true;
                         }
@@ -461,27 +699,27 @@ namespace OnePago
                 }
                 return false;
             }
-            if (card.Card_Shape == CardInfo.Shape.BlackJocker || card.Card_Shape == CardInfo.Shape.ColorJocker) //조커 내고싶음
-            {
-                if (LastCard.Card_Shape == CardInfo.Shape.BlackJocker || LastCard.Card_Shape == CardInfo.Shape.ColorJocker)
-                {
-                    return true;
-                }
-                if (card.Color == LastCard.Color)
-                {
-                    return true;
-                }
-            }
             else
             {
-                if (LastCard.Card_Shape == CardInfo.Shape.BlackJocker || LastCard.Card_Shape == CardInfo.Shape.ColorJocker)
+                if (card.Card_Shape == CardInfo.Shape.BlackJocker || card.Card_Shape == CardInfo.Shape.ColorJocker) //조커 내고싶음
                 {
-                    if (card.Color == LastCard.Color)
+                    if (LastCard.Card_Shape == CardInfo.Shape.BlackJocker || LastCard.Card_Shape == CardInfo.Shape.ColorJocker) //연속 조커
+                    {
+                        return true;
+                    }
+                    if (card.Color == LastCard.Color)//색일치
                     {
                         return true;
                     }
                 }
-                if (card.Card_Number == LastCard.Card_Number || card.Card_Shape == LastCard.Card_Shape)
+                if (LastCard.Card_Shape == CardInfo.Shape.BlackJocker || LastCard.Card_Shape == CardInfo.Shape.ColorJocker) //마지막 카드 조커
+                {
+                    if (card.Color == LastCard.Color)//색일치
+                    {
+                        return true;
+                    }
+                }
+                if (card.Card_Number == LastCard.Card_Number || card.Card_Shape == LastCard.Card_Shape)//일반
                 {
                     return true;
                 }
@@ -490,7 +728,7 @@ namespace OnePago
         }
 
         //파산
-        public void Bankrupt(AI who)
+        public void Bankrupt(Player who)
         {
             Changed_PlayerID = who.ID;
             Console.WriteLine("파산." + who.ID);
@@ -500,7 +738,7 @@ namespace OnePago
         }
 
         //승리
-        public void Win(AI who)
+        public void Win(Player who)
         {
             Changed_PlayerID = who.ID;
             Console.WriteLine("승리." + who.ID);
@@ -512,15 +750,15 @@ namespace OnePago
         //끝(상대선수 없음)
         public void End()
         {
-            Console.WriteLine("겜 종료" + GameTurn.cumulation + "턴");
+            Console.WriteLine("겜 종료" + GameTurn.cumulation + "턴 최후의 패배자"+Players[0].ID);
         }
 
-        public CardInfo Take(ref AI who)
+        public CardInfo Take(ref Player who)
         {
             if (CardDeck.Count == 0)
             {
                 List<CardInfo> reject = new List<CardInfo>();
-                foreach (AI player in Players)
+                foreach (Player player in Players)
                 {
                     reject.AddRange(player.Cards);
                 }
@@ -545,30 +783,24 @@ namespace OnePago
 
         private void GenDeck(bool PlayerReq, List<CardInfo> rejects = null)
         {
-            int shape = 1;
             if (!PlayerReq) //첫번째 판
             {
-                for (int i = 0; i != 4; i++)
+                for (int shape = 1; shape != 5; shape++)
                 {
                     for (int j = 1; j != 14; j++)
                     {
-                        if ((CardInfo.Shape)i == CardInfo.Shape.Heart || (CardInfo.Shape)i == CardInfo.Shape.Diamond)
-                        {
-                            CardDeck.Add(new CardInfo((CardInfo.Shape)shape, j, true));
-                        }
-                        CardDeck.Add(new CardInfo((CardInfo.Shape)shape, j, false));
+                        CardDeck.Add(new CardInfo((CardInfo.Shape)shape, j));
                     }
-                    shape++;
                 }
-                CardDeck.Add(new CardInfo(CardInfo.Shape.BlackJocker, 0, false));
-                CardDeck.Add(new CardInfo(CardInfo.Shape.ColorJocker, 0, true));
+                CardDeck.Add(new CardInfo(CardInfo.Shape.BlackJocker, 0));
+                CardDeck.Add(new CardInfo(CardInfo.Shape.ColorJocker, 0));
                 Shuffle(ref CardDeck);
                 LastCard = CardDeck[0];
                 //덱 완성(54장)
             }
             else
             {
-                foreach (AI player in Players)
+                foreach (Player player in Players)
                 {
                     if (player.AmAI)
                     {
@@ -576,16 +808,12 @@ namespace OnePago
                     }
                 }
                 bool Is_reject = false;
-                for (int i = 0; i != 4; i++)
+                for (int shape = 1; shape != 5; shape++)
                 {
                     for (int j = 1; j != 14; j++)
                     {
                         CardInfo gencard = null;
-                        if ((CardInfo.Shape)i == CardInfo.Shape.Heart || (CardInfo.Shape)i == CardInfo.Shape.Diamond)
-                        {
-                            gencard = new CardInfo((CardInfo.Shape)shape, j, true);
-                        }
-                        gencard = new CardInfo((CardInfo.Shape)shape, j, false);
+                        gencard = new CardInfo((CardInfo.Shape)shape, j);
                         foreach (CardInfo reject in rejects)
                         {
                             if (gencard == reject)
@@ -600,11 +828,10 @@ namespace OnePago
 
                         Is_reject = false;
                     }
-                    shape++;
                 }
 
                 Is_reject = false;
-                CardInfo gencard_jocker = new CardInfo(CardInfo.Shape.BlackJocker, 0, false);
+                CardInfo gencard_jocker = new CardInfo(CardInfo.Shape.BlackJocker, 0);
                 foreach (CardInfo reject in rejects)
                 {
                     if (gencard_jocker == reject)
@@ -618,7 +845,7 @@ namespace OnePago
                 }
 
                 Is_reject = false;
-                gencard_jocker = new CardInfo(CardInfo.Shape.ColorJocker, 0, true);
+                gencard_jocker = new CardInfo(CardInfo.Shape.ColorJocker, 0);
                 foreach (CardInfo reject in rejects)
                 {
                     if (gencard_jocker == reject)
