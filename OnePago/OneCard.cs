@@ -247,12 +247,13 @@ namespace OnePago
                                     system.Attack += 10;
                                     break;
                             }
-
+                            Console.ForegroundColor = ConsoleColor.DarkYellow;
                             Console.WriteLine(ID + ": " + card + "제출 남은 카드 " + Cards.Count);
                             if (tempcard != CardInfo.Shape.None)
                             {
                                 Console.WriteLine("카드 모양 변경: " + tempcard);
                             }
+                            Console.ForegroundColor = ConsoleColor.Gray;
 
                             Card_found = true;
                             system.Play(card, ref who, IsSeven);
@@ -276,8 +277,9 @@ namespace OnePago
                 {
                     system.Bankrupt(who);
                 }
-
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
                 Console.WriteLine(ID + ": " + Cards.Count + "장");
+                Console.ForegroundColor = ConsoleColor.Gray;
                 system.GameTurn.Next(system, Players, IsJ);
             }
 
@@ -310,10 +312,14 @@ namespace OnePago
                 bool IsJ = false;
                 bool IsSeven = false;
                 Console.WriteLine("카드를 낼시간");
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("마지막카드" + system.LastCard);
+                Console.ForegroundColor = ConsoleColor.Gray;
                 if (system.Attack != 0)
                 {
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("경고! 공격받는중" + system.Attack + "장!");
+                    Console.ForegroundColor = ConsoleColor.Gray;
                 }
                 for (int i = 0; i != Cards.Count; i++)
                 {
@@ -327,7 +333,10 @@ namespace OnePago
                 }
                 catch(FormatException e)
                 {
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
                     Console.WriteLine("올바른 입력이 아닙니다");
+                    Console.ForegroundColor = ConsoleColor.Gray;
+
                     goto K;
                 }
                 if (want == Cards.Count)
@@ -336,13 +345,17 @@ namespace OnePago
                     {
                         for (int j = 0; j != system.Attack; j++)
                         {
+                            Console.ForegroundColor = ConsoleColor.White;
                             Console.WriteLine(ID + ": " + system.Take(ref who) + "먹음");
+                            Console.ForegroundColor = ConsoleColor.Gray;
                         }
                         system.Attack = 0;
                     }
                     else
                     {
+                        Console.ForegroundColor = ConsoleColor.White;
                         Console.WriteLine(ID + ": " + system.Take(ref who) + "먹음");
+                        Console.ForegroundColor = ConsoleColor.Gray;
                     }
                     goto Exit;
                 }
@@ -387,7 +400,9 @@ namespace OnePago
                     }
                     else
                     {
+                        Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine("올바른 카드가 아닙니다!");
+                        Console.ForegroundColor = ConsoleColor.Gray;
                         goto K;
                     }
                 }
@@ -426,6 +441,7 @@ namespace OnePago
                                 break;
 
                             case 7:
+                                Console.ForegroundColor = ConsoleColor.Blue;
                                 Console.WriteLine("무슨 모양으로 변경하겠습니까?");
                                 Console.WriteLine("1. 다이아 2.하트 3.스페이드 4. 클로버");
                                 try
@@ -434,6 +450,7 @@ namespace OnePago
                                 }
                                 catch (FormatException e)
                                 {
+                                    Console.ForegroundColor = ConsoleColor.Red;
                                     Console.WriteLine("올바른 입력이 아닙니다");
                                     goto K;
                                 }
@@ -442,6 +459,7 @@ namespace OnePago
                                     temp = true
                                 };
                                 IsSeven = true;
+                                Console.ForegroundColor = ConsoleColor.Gray;
                                 break;
                         }
 
@@ -678,7 +696,7 @@ namespace OnePago
                 {
                     if(LastCard.Card_Shape == CardInfo.Shape.BlackJocker) //흑조 시도
                     {
-                        if (card.Card_Number == 3) //3시도
+                        if (card.Card_Number == 3 && card.Card_Shape == CardInfo.Shape.Spade) //스페이드 3 방어 시도
                         {
                             return true;
                         }
@@ -731,7 +749,9 @@ namespace OnePago
         public void Bankrupt(Player who)
         {
             Changed_PlayerID = who.ID;
+            Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("파산." + who.ID);
+            Console.ForegroundColor = ConsoleColor.Gray;
             Players.Remove(who);
             GC.Collect();
             GameTurn.PlayerChanged = true;
@@ -741,7 +761,9 @@ namespace OnePago
         public void Win(Player who)
         {
             Changed_PlayerID = who.ID;
+            Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("승리." + who.ID);
+            Console.ForegroundColor = ConsoleColor.Gray;
             Players.Remove(who);
             GC.Collect();
             GameTurn.PlayerChanged = true;
@@ -750,7 +772,9 @@ namespace OnePago
         //끝(상대선수 없음)
         public void End()
         {
-            Console.WriteLine("겜 종료" + GameTurn.cumulation + "턴 최후의 패배자"+Players[0].ID);
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("겜 종료" + GameTurn.cumulation);
+            Console.ForegroundColor = ConsoleColor.Gray;
         }
 
         public CardInfo Take(ref Player who)
