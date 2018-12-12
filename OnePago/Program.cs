@@ -12,13 +12,14 @@ namespace OnePago
     {
         static void Main(string[] args)
         {
-            List<Player> players = new List<Player>();
+            List<OneCard.AI> players = new List<OneCard.AI>();
             Console.WriteLine("플레이어수");
             int howmany = Convert.ToInt32(Console.ReadLine());
-            for (int i =0; i != howmany; i++)
+            for (int i =0; i != howmany-1; i++)
             {
-                players.Add(new Player());
+                players.Add(new OneCard.AI());
             }
+            players.Add(new AI());
             OneCard Game = new OneCard(players);
             Thread thread = new Thread(() => Game.Start(), 125000*1000);
             thread.Start();
