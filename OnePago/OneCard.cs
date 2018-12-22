@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Speech.Synthesis;
+using System.Threading;
 
 namespace OnePago
 {
@@ -23,6 +25,7 @@ namespace OnePago
             public int Card_Number = 0; // A = 1, J=11 ,Q=12, K=13
             public bool Color = false;
             public bool temp = false;
+            public int ID = 0;
 
             public CardInfo()
             {
@@ -40,6 +43,10 @@ namespace OnePago
 
             public static bool operator ==(CardInfo obj1, CardInfo obj2)
             {
+                if(obj1 is null || obj2 is null)
+                {
+                    return false;
+                }
                 bool Check_Shape = obj1.Card_Shape == obj2.Card_Shape;
                 bool Check_Number = obj1.Card_Number == obj2.Card_Number;
                 return (Check_Number && Check_Shape);
@@ -81,6 +88,22 @@ namespace OnePago
                 }
                 return target;
             }
+
+            public override bool Equals(object obj)
+            {
+                var info = obj as CardInfo;
+                return info != null &&
+                       Card_Shape == info.Card_Shape &&
+                       Card_Number == info.Card_Number;
+            }
+
+            public override int GetHashCode()
+            {
+                var hashCode = 859603374;
+                hashCode = hashCode * -1521134295 + Card_Shape.GetHashCode();
+                hashCode = hashCode * -1521134295 + Card_Number.GetHashCode();
+                return hashCode;
+            }
         }
 
         public abstract class Player
@@ -88,6 +111,9 @@ namespace OnePago
             public int ID = 0;
             public List<CardInfo> Cards = new List<CardInfo>();
             public bool AmAI;
+            public int x_margin = 0;
+            public int y_margin = 0;
+            public bool Horizon;
 
             public abstract void Do(OneCard system, Player who, List<Player> Players);
 
@@ -279,7 +305,18 @@ namespace OnePago
                 }
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
                 Console.WriteLine(ID + ": " + Cards.Count + "장");
+                if (Cards.Count == 1)
+                {
+                    SpeechSynthesizer synthesizer = new SpeechSynthesizer
+                    {
+                        Volume = 100,  // 0...100
+                        Rate = 7     // -10...10
+                    };
+
+                    synthesizer.Speak("OneCard");
+                }
                 Console.ForegroundColor = ConsoleColor.Gray;
+                Thread.Sleep(2000);
                 system.GameTurn.Next(system, Players, IsJ);
             }
 
@@ -323,6 +360,7 @@ namespace OnePago
                 }
                 for (int i = 0; i != Cards.Count; i++)
                 {
+                    Cards[i].ID = i;
                     Console.WriteLine(i + ":" + Cards[i]);
                 }
                 Console.WriteLine("먹을려면" + Cards.Count);
@@ -358,6 +396,14 @@ namespace OnePago
                         Console.ForegroundColor = ConsoleColor.Gray;
                     }
                     goto Exit;
+                }
+                if(want > Cards.Count)
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                    Console.WriteLine("올바른 입력이 아닙니다");
+                    Console.ForegroundColor = ConsoleColor.Gray;
+
+                    goto K;
                 }
                 CardInfo card = Cards[want];
                 if (system.Attack != 0) //공격받는중
@@ -609,6 +655,7 @@ namespace OnePago
                         reset = false;
                     }
                     Player output = Players[Count_Turn];
+                    system.GUI_system.whosturn = output;
                     output.Do(system, output, Players);
                     return output;
                 }
@@ -629,23 +676,25 @@ namespace OnePago
         protected int Changed_PlayerID = 0;
         public int Attack;
         public bool GameStarted;
+        public GUI GUI_system = null;
 
         protected OneCard()
         {
         }
 
-        public OneCard(List<Player> players)
+        public OneCard(List<Player> players, GUI GUI_system)
         {
+            this.GUI_system = GUI_system;
             GenDeck(false);
             Players = players;
             for (int who = 0; who < players.Count; who++)
             {
                 Player whois = players[who];
-                whois.ID = who;
                 for (int i = 0; i != 7; i++)
                 {
                     Take(ref whois);
                 }
+
             }
         }
 
@@ -658,6 +707,7 @@ namespace OnePago
         public void Play(CardInfo card, ref Player who, bool Seven)
         {
             who.Cards.Remove(card);
+            GUI_system.DelGO(card, who);
             if (!Seven)
             {
                 LastCard.temp = false;
@@ -755,6 +805,7 @@ namespace OnePago
             Players.Remove(who);
             GC.Collect();
             GameTurn.PlayerChanged = true;
+            GUI_system.Bankrupt(who);
         }
 
         //승리
@@ -800,6 +851,7 @@ namespace OnePago
             CardInfo temp = CardDeck[0];
             CardDeck.RemoveAt(0);
             who.Cards.Add(temp);
+            GUI_system.RegGO(temp, who);
             return temp;
             End:
             return new CardInfo();
@@ -820,6 +872,7 @@ namespace OnePago
                 CardDeck.Add(new CardInfo(CardInfo.Shape.ColorJocker, 0));
                 Shuffle(ref CardDeck);
                 LastCard = CardDeck[0];
+                GUI_system.Update_Trash(LastCard);
                 //덱 완성(54장)
             }
             else
@@ -881,7 +934,6 @@ namespace OnePago
                 {
                     CardDeck.Add(gencard_jocker);
                 }
-
                 //덱 완성(n 장)
                 Shuffle(ref CardDeck);
             }
