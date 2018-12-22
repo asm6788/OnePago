@@ -320,8 +320,10 @@ namespace OnePago
         Text text_Trash = null;
         bool temp = false;
         public OneCard.Player whosturn;
-        public GUI()
+        bool Only_two = false;
+        public GUI(bool Only_two)
         {
+            this.Only_two = Only_two;
             RegDictionary();
             window = new RenderWindow(new VideoMode(1500, 800), "원-파-고");
             window.SetFramerateLimit(60);
@@ -429,25 +431,41 @@ namespace OnePago
 
         public void RegGO(OneCard.CardInfo card, OneCard.Player who)
         {
-            if (who.ID == 0)
+            if (!Only_two)
             {
-                Objs.Add(new GameObject(new Sprite(new Texture("Cards/Back.png")) { Scale = new Vector2f(0.3f, 0.3f), Position = new Vector2f(600 + 30 * who.x_margin, -100 + who.y_margin) }, card, who));
-                who.x_margin += 1;
+                if (who.ID == 0)
+                {
+                    Objs.Add(new GameObject(new Sprite(new Texture("Cards/Back.png")) { Scale = new Vector2f(0.3f, 0.3f), Position = new Vector2f(600 + 30 * who.x_margin, -100 + who.y_margin) }, card, who));
+                    who.x_margin += 1;
+                }
+                else if (who.ID == 1)
+                {
+                    Objs.Add(new GameObject(new Sprite(new Texture("Cards/Back.png")) { Scale = new Vector2f(0.3f, 0.3f), Position = new Vector2f(1600, 210 + 10 * who.y_margin), Rotation = 90 }, card, who));
+                    who.y_margin += 1;
+                }
+                else if (who.ID == 2)
+                {
+                    Objs.Add(new GameObject(new Sprite(new Texture(FileDB[card])) { Scale = new Vector2f(0.3f, 0.3f), Position = new Vector2f(600 + 30 * who.x_margin, 600) }, card, who));
+                    who.x_margin += 1;
+                }
+                else if (who.ID == 3)
+                {
+                    Objs.Add(new GameObject(new Sprite(new Texture("Cards/Back.png")) { Scale = new Vector2f(0.3f, 0.3f), Position = new Vector2f(100, 210 + 10 * who.y_margin), Rotation = 90 }, card, who));
+                    who.y_margin += 1;
+                }
             }
-            else if (who.ID == 1)
+            else
             {
-                Objs.Add(new GameObject(new Sprite(new Texture("Cards/Back.png")) { Scale = new Vector2f(0.3f, 0.3f), Position = new Vector2f(1600, 210 + 10 * who.y_margin), Rotation = 90 }, card, who));
-                who.y_margin += 1;
-            }
-            else if (who.ID == 2)
-            {
-                Objs.Add(new GameObject(new Sprite(new Texture(FileDB[card])) { Scale = new Vector2f(0.3f, 0.3f), Position = new Vector2f(600 + 30 * who.x_margin, 600) }, card, who));
-                who.x_margin += 1;
-            }
-            else if (who.ID == 3)
-            {
-                Objs.Add(new GameObject(new Sprite(new Texture("Cards/Back.png")) { Scale = new Vector2f(0.3f, 0.3f), Position = new Vector2f(100, 210 + 10 * who.y_margin), Rotation = 90 }, card, who));
-                who.y_margin += 1;
+                if (who.ID == 0)
+                {
+                    Objs.Add(new GameObject(new Sprite(new Texture("Cards/Back.png")) { Scale = new Vector2f(0.3f, 0.3f), Position = new Vector2f(600 + 30 * who.x_margin, -100 + who.y_margin) }, card, who));
+                    who.x_margin += 1;
+                }
+                else if (who.ID == 1)
+                {
+                    Objs.Add(new GameObject(new Sprite(new Texture(FileDB[card])) { Scale = new Vector2f(0.3f, 0.3f), Position = new Vector2f(600 + 30 * who.x_margin, 600) }, card, who));
+                    who.x_margin += 1;
+                }
             }
         }
 
