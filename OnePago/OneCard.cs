@@ -121,7 +121,7 @@ namespace OnePago
 
             public abstract void RememberCard(CardInfo card);
 
-            public abstract void Find(OneCard system);
+  
         }
 
         public class AI : Player
@@ -316,7 +316,6 @@ namespace OnePago
                     synthesizer.Speak("OneCard");
                 }
                 Console.ForegroundColor = ConsoleColor.Gray;
-                Thread.Sleep(2000);
                 system.GameTurn.Next(system, Players, IsJ);
             }
 
@@ -328,13 +327,9 @@ namespace OnePago
             {
             }
 
-            public override void Find(OneCard system)
-            {
-                foreach (CardInfo card in Cards)
-                {
-                }
-            }
         }
+
+     
 
         public class Human : Player
         {
@@ -558,12 +553,6 @@ namespace OnePago
             {
             }
 
-            public override void Find(OneCard system)
-            {
-                foreach (CardInfo card in Cards)
-                {
-                }
-            }
         }
 
         public class Turn
@@ -575,6 +564,7 @@ namespace OnePago
             public int cumulation;
             public bool PlayerChanged = false;
             public bool LastTurnWin = false;
+            public bool Card_Mixed = false;
 
             public Player Next(OneCard system, List<Player> Players, bool IsJ = false)
             {
@@ -725,6 +715,8 @@ namespace OnePago
                     who.RememberCard(card);
                 }
             }
+            //if (who.AmAI)
+            //    Thread.Sleep(2000);
         }
 
         public bool Vaildate(CardInfo card)
@@ -877,13 +869,7 @@ namespace OnePago
             }
             else
             {
-                foreach (Player player in Players)
-                {
-                    if (player.AmAI)
-                    {
-                        player.ForgetCard();
-                    }
-                }
+                GameTurn.Card_Mixed = true;
                 bool Is_reject = false;
                 for (int shape = 1; shape != 5; shape++)
                 {

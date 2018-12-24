@@ -363,7 +363,10 @@ namespace OnePago
                 window.DispatchEvents();
                 for (int i = 0; i != Objs.Count; i++)
                 {
-                    window.Draw(Objs[i].sprite);
+                    if (i < Objs.Count)
+                    {
+                        window.Draw(Objs[i].sprite);
+                    }
                 }
                 if (trash != null)
                 {
