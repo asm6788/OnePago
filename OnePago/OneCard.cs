@@ -794,6 +794,7 @@ namespace OnePago
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("파산." + who.ID);
             Console.ForegroundColor = ConsoleColor.Gray;
+            CardDeck.AddRange(who.Cards);
             Players.Remove(who);
             GC.Collect();
             GameTurn.PlayerChanged = true;
@@ -807,6 +808,7 @@ namespace OnePago
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("승리." + who.ID);
             Console.ForegroundColor = ConsoleColor.Gray;
+            CardDeck.AddRange(who.Cards);
             Players.Remove(who);
             GC.Collect();
             GameTurn.PlayerChanged = true;
@@ -834,7 +836,7 @@ namespace OnePago
             }
             if (CardDeck.Count == 0)
             {
-                Console.WriteLine("다 쳐먹음ㅋㅋㅋㅋ겜끝남");
+                Console.WriteLine("다 쳐먹음 겜끝남");
                 GameStarted = false;
                 Players.Clear();
                 GC.Collect();
